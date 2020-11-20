@@ -18,12 +18,13 @@ jobs:
           sudo apt-get install tcl8.6-dev libx11-dev xvfb
           mkdir "$HOME/install dir"
           echo "TEST_INSTALL_DIR=$HOME/install dir" >> $GITHUB_ENV
+          echo "TCL_CONFIG_PATH=/usr/lib/tcl8.6" >> $GITHUB_ENV
         working-directory: "."
       - name: Checkout
         uses: actions/checkout@v2
       - name: Configure (symbols=${{ matrix.symbols }})
         run: |
-          ./configure ${CFGOPT} "--prefix=$TEST_INSTALL_DIR"
+          ./configure ${CFGOPT} "--prefix=$TEST_INSTALL_DIR" --with-tcl=$TCL_CONFIG_PATH
         env:
           CFGOPT: --enable-symbols=${{ matrix.symbols }}
       - name: Report Log on Configure Failure
