@@ -3,14 +3,12 @@ on: [push]
 defaults:
   run:
     shell: bash
+    working-directory: unix
 env:
   ERROR_ON_FAILURES: 1
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: unix
     strategy:
       matrix:
         compiler:
@@ -30,7 +28,6 @@ jobs:
       - name: Setup Environment (compiler=${{ matrix.compiler }})
         run: |
           sudo apt-get install tcl8.6-dev libx11-dev libxss-dev xvfb
-          [ $COMPILER -eq clang ] && sudo apt-get install clang-10
           mkdir "$HOME/install dir"
           touch doc/man.macros tkStubInit.c
           echo "TEST_INSTALL_DIR=$HOME/install dir" >> $GITHUB_ENV
@@ -54,12 +51,44 @@ jobs:
         run: make install
       - name: Create Distribution Package
         run: make dist
+      - name: Convert Documentation to HTML
+        # Needs a Tcl source checkout
+        if: ${{ false }}
+        run: make html-tk
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler:
+          - "gcc"
+        symbols:
+          - "no"
+          - "mem"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Environment (compiler=${{ matrix.compiler }})
+        run: |
+          sudo apt-get install tcl8.6-dev libx11-dev libxss-dev xvfb
+          mkdir "$HOME/install dir"
+          touch doc/man.macros tkStubInit.c
+          echo "TEST_INSTALL_DIR=$HOME/install dir" >> $GITHUB_ENV
+          echo "CFGOPT=$CFGOPT --with-tcl=/usr/lib/tcl8.6" >> $GITHUB_ENV
+          echo "CC=$COMPILER" >> $GITHUB_ENV
+        working-directory: "."
+        env:
+          CFGOPT: --enable-symbols=${{ matrix.symbols }}
+          COMPILER: ${{ matrix.compiler }}
+      - name: Configure (symbols=${{ matrix.symbols }})
+        run: |
+          ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR"
+      - name: Report Log on Configure Failure
+        if: ${{ failure() }}
+        run: cat config.log
+      - name: Build
+        run: make binaries libraries tktest
       - name: Run Tests
         run: |
           xvfb-run --auto-servernum make test-classic | tee out-classic.txt
           xvfb-run --auto-servernum make test-ttk | tee out-ttk.txt
           cat out-classic.txt out-ttk.txt | grep -q "Failed	0"
-      - name: Convert Documentation to HTML
-        # Needs a Tcl source checkout
-        if: ${{ false }}
-        run: make html-tk
