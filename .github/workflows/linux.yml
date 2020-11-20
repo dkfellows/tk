@@ -13,6 +13,9 @@ jobs:
         working-directory: unix
     strategy:
       matrix:
+        compiler:
+          - "gcc"
+          - "clang"
         symbols:
           - "no"
           - "mem"
@@ -22,17 +25,21 @@ jobs:
           - "--disable-xft"
           - "--disable-xss"
     steps:
-      - name: Setup Environment
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Environment (compiler=${{ matrix.compiler }})
         run: |
-          sudo apt-get install tcl8.6-dev libx11-dev xvfb
+          sudo apt-get install tcl8.6-dev libx11-dev libxss-dev xvfb
+          [ $COMPILER -eq clang ] && sudo apt-get install clang-10
           mkdir "$HOME/install dir"
+          touch doc/man.macros tkStubInit.c
           echo "TEST_INSTALL_DIR=$HOME/install dir" >> $GITHUB_ENV
           echo "CFGOPT=$CFGOPT --with-tcl=/usr/lib/tcl8.6" >> $GITHUB_ENV
+          echo "CC=$COMPILER" >> $GITHUB_ENV
         working-directory: "."
         env:
           CFGOPT: --enable-symbols=${{ matrix.symbols }} ${{ matrix.disables }}
-      - name: Checkout
-        uses: actions/checkout@v2
+          COMPILER: ${{ matrix.compiler }}
       - name: Configure (symbols=${{ matrix.symbols }} opts=${{ matrix.disables }})
         run: |
           ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR"
