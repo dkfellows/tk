@@ -6,6 +6,7 @@ defaults:
     working-directory: tk/unix
 env:
   ERROR_ON_FAILURES: 1
+  FAILED: "false"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -50,18 +51,31 @@ jobs:
         run: |
           ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR"
       - name: Report Log on Configure Failure
-        if: ${{ failure() }}
-        run: cat config.log
+        if: ${{ failure() && !env.FAILED }}
+        run: |
+          cat config.log
+          echo "::error::Failure during Configure"
+          echo "FAILED=true" >> $GITHUB_ENV
       - name: Build
         run: make binaries libraries
       - name: Build Test Harness
         run: make tktest
+      - name: Post-Build
+        if: ${{ failure() && !env.FAILED }}
+        run: |
+          echo "::error::Failure during Build"
+          echo "FAILED=true" >> $GITHUB_ENV
       - name: Test-Drive Installation
         run: make install
       - name: Create Distribution Package
         run: make dist
       - name: Convert Documentation to HTML
         run: make html-tk TOOL_DIR=$TOOL_DIR
+      - name: Post-Install/Distribution
+        if: ${{ failure() && !env.FAILED }}
+        run: |
+          echo "::error::Failure during Install/Distribution"
+          echo "FAILED=true" >> $GITHUB_ENV
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -92,12 +106,25 @@ jobs:
         run: |
           ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR"
       - name: Report Log on Configure Failure
-        if: ${{ failure() }}
-        run: cat config.log
+        if: ${{ failure() && !env.FAILED }}
+        run: |
+          cat config.log
+          echo "::error::Failure during Configure"
+          echo "FAILED=true" >> $GITHUB_ENV
       - name: Build
         run: make binaries libraries tktest
+      - name: Post-Build
+        if: ${{ failure() && !env.FAILED }}
+        run: |
+          echo "::error::Failure during Build"
+          echo "FAILED=true" >> $GITHUB_ENV
       - name: Run Tests
         run: |
           xvfb-run --auto-servernum make test-classic | tee out-classic.txt
           xvfb-run --auto-servernum make test-ttk | tee out-ttk.txt
           cat out-classic.txt out-ttk.txt | grep -q "Failed	0"
+      - name: Post-Test
+        if: ${{ failure() && !env.FAILED }}
+        run: |
+          echo "::error::Failure during Test"
+          echo "FAILED=true" >> $GITHUB_ENV
