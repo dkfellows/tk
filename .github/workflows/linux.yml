@@ -6,7 +6,6 @@ defaults:
     working-directory: tk/unix
 env:
   ERROR_ON_FAILURES: 1
-  FAILED: 0
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -51,33 +50,41 @@ jobs:
           OPTS: ${{ matrix.compiler }}-${{ matrix.symbols }}${{ matrix.disables }}
       - name: Configure (symbols=${{ matrix.symbols }} opts=${{ matrix.disables }})
         run: |
-          ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR"
-      - name: Report Log on Configure Failure
-        if: ${{ failure() && !env.FAILED }}
-        run: |
-          cat config.log
-          echo "::error::Failure during Configure"
-          echo "FAILED=1" >> $GITHUB_ENV
+          ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR" || {
+            cat config.log
+            echo "::error::Failure during Configure"
+            exit 1
+          }
       - name: Build
-        run: make binaries libraries
+        run: |
+          make binaries libraries || {
+            echo "::error::Failure during Build"
+            exit 1
+          }
       - name: Build Test Harness
-        run: make tktest
-      - name: Post-Build
-        if: ${{ failure() && !env.FAILED }}
         run: |
-          echo "::error::Failure during Build"
-          echo "FAILED=1" >> $GITHUB_ENV
+          make tktest || {
+            echo "::error::Failure during Build"
+            exit 1
+          }
       - name: Test-Drive Installation
-        run: make install
-      - name: Create Distribution Package
-        run: make dist
-      - name: Convert Documentation to HTML
-        run: make html-tk TOOL_DIR=$TOOL_DIR
-      - name: Post-Install/Distribution
-        if: ${{ failure() && !env.FAILED }}
         run: |
-          echo "::error::Failure during Install/Distribution"
-          echo "FAILED=1" >> $GITHUB_ENV
+          make install || {
+            echo "::error::Failure during Install"
+            exit 1
+          }
+      - name: Create Distribution Package
+        run: |
+          make dist || {
+            echo "::error::Failure during Distribute"
+            exit 1
+          }
+      - name: Convert Documentation to HTML
+        run: |
+          make html-tk TOOL_DIR=$TOOL_DIR || {
+            echo "::error::Failure during Distribute"
+            exit 1
+          }
       - name: Discover Version ID
         if: ${{ env.BUILD_CONFIG_ID == 'gcc-no' }}
         run: |
@@ -125,27 +132,28 @@ jobs:
           COMPILER: ${{ matrix.compiler }}
       - name: Configure (symbols=${{ matrix.symbols }})
         run: |
-          ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR"
-      - name: Report Log on Configure Failure
-        if: ${{ failure() && !env.FAILED }}
-        run: |
-          cat config.log
-          echo "::error::Failure during Configure"
-          echo "FAILED=1" >> $GITHUB_ENV
+          ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR" || {
+            cat config.log
+            echo "::error::Failure during Configure"
+            exit 1
+          }
       - name: Build
-        run: make binaries libraries tktest
-      - name: Post-Build
-        if: ${{ failure() && !env.FAILED }}
         run: |
-          echo "::error::Failure during Build"
-          echo "FAILED=1" >> $GITHUB_ENV
+          make binaries libraries tktest || {
+            echo "::error::Failure during Build"
+            exit 1
+          }
       - name: Run Tests
         run: |
-          xvfb-run --auto-servernum make test-classic | tee out-classic.txt
-          xvfb-run --auto-servernum make test-ttk | tee out-ttk.txt
-          cat out-classic.txt out-ttk.txt | grep -q "Failed	0"
-      - name: Post-Test
-        if: ${{ failure() && !env.FAILED }}
-        run: |
-          echo "::error::Failure during Test"
-          echo "FAILED=1" >> $GITHUB_ENV
+          xvfb-run --auto-servernum make test-classic | tee out-classic.txt || {
+            echo "::error::Failure during Test"
+            exit 1
+          }
+          xvfb-run --auto-servernum make test-ttk | tee out-ttk.txt || {
+            echo "::error::Failure during Test"
+            exit 1
+          }
+          cat out-classic.txt out-ttk.txt | grep -q "Failed	0" || {
+            echo "::error::Failure during Test"
+            exit 1
+          }
