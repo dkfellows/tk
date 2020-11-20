@@ -61,7 +61,7 @@ jobs:
       - name: Create Distribution Package
         run: make dist
       - name: Convert Documentation to HTML
-        run: make html-tk
+        run: make html-tk TOOL_DIR=$TOOL_DIR
   test:
     runs-on: ubuntu-latest
     strategy:
