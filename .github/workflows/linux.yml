@@ -6,7 +6,7 @@ defaults:
     working-directory: tk/unix
 env:
   ERROR_ON_FAILURES: 1
-  FAILED: "false"
+  FAILED: 0
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -55,7 +55,7 @@ jobs:
         run: |
           cat config.log
           echo "::error::Failure during Configure"
-          echo "FAILED=true" >> $GITHUB_ENV
+          echo "FAILED=1" >> $GITHUB_ENV
       - name: Build
         run: make binaries libraries
       - name: Build Test Harness
@@ -64,18 +64,23 @@ jobs:
         if: ${{ failure() && !env.FAILED }}
         run: |
           echo "::error::Failure during Build"
-          echo "FAILED=true" >> $GITHUB_ENV
+          echo "FAILED=1" >> $GITHUB_ENV
       - name: Test-Drive Installation
         run: make install
       - name: Create Distribution Package
-        run: make dist
+        run: make alldist
       - name: Convert Documentation to HTML
         run: make html-tk TOOL_DIR=$TOOL_DIR
       - name: Post-Install/Distribution
         if: ${{ failure() && !env.FAILED }}
         run: |
           echo "::error::Failure during Install/Distribution"
-          echo "FAILED=true" >> $GITHUB_ENV
+          echo "FAILED=1" >> $GITHUB_ENV
+      - name: Upload Distribution Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: distribution
+          path: /tmp/dist/tk*-src.zip
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -110,14 +115,14 @@ jobs:
         run: |
           cat config.log
           echo "::error::Failure during Configure"
-          echo "FAILED=true" >> $GITHUB_ENV
+          echo "FAILED=1" >> $GITHUB_ENV
       - name: Build
         run: make binaries libraries tktest
       - name: Post-Build
         if: ${{ failure() && !env.FAILED }}
         run: |
           echo "::error::Failure during Build"
-          echo "FAILED=true" >> $GITHUB_ENV
+          echo "FAILED=1" >> $GITHUB_ENV
       - name: Run Tests
         run: |
           xvfb-run --auto-servernum make test-classic | tee out-classic.txt
@@ -127,4 +132,4 @@ jobs:
         if: ${{ failure() && !env.FAILED }}
         run: |
           echo "::error::Failure during Test"
-          echo "FAILED=true" >> $GITHUB_ENV
+          echo "FAILED=1" >> $GITHUB_ENV
