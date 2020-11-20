@@ -1,32 +1,41 @@
 name: Linux Build and Test
 on: [push]
+defaults:
+  run:
+    shell: bash
+env:
+  ERROR_ON_FAILURES: 1
 jobs:
-  gcc:
+  build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
         working-directory: unix
     strategy:
       matrix:
         symbols:
           - "no"
           - "mem"
+        disables:
+          - ""
+          - "--disable-shared"
+          - "--disable-xft"
+          - "--disable-xss"
     steps:
       - name: Setup Environment
         run: |
           sudo apt-get install tcl8.6-dev libx11-dev xvfb
           mkdir "$HOME/install dir"
           echo "TEST_INSTALL_DIR=$HOME/install dir" >> $GITHUB_ENV
-          echo "TCL_CONFIG_PATH=/usr/lib/tcl8.6" >> $GITHUB_ENV
+          echo "CFGOPT=$CFGOPT --with-tcl=/usr/lib/tcl8.6" >> $GITHUB_ENV
         working-directory: "."
+        env:
+          CFGOPT: --enable-symbols=${{ matrix.symbols }} ${{ matrix.disables }}
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Configure (symbols=${{ matrix.symbols }})
+      - name: Configure (symbols=${{ matrix.symbols }} opts=${{ matrix.disables }})
         run: |
-          ./configure ${CFGOPT} "--prefix=$TEST_INSTALL_DIR" --with-tcl=$TCL_CONFIG_PATH
-        env:
-          CFGOPT: --enable-symbols=${{ matrix.symbols }}
+          ./configure $CFGOPT "--prefix=$TEST_INSTALL_DIR"
       - name: Report Log on Configure Failure
         if: ${{ failure() }}
         run: cat config.log
@@ -34,17 +43,15 @@ jobs:
         run: make binaries libraries
       - name: Build Test Harness
         run: make tktest
+      - name: Test-Drive Installation
+        run: make install
+      - name: Create Distribution Package
+        run: make dist
       - name: Run Tests
         run: |
           xvfb-run --auto-servernum make test-classic | tee out-classic.txt
           xvfb-run --auto-servernum make test-ttk | tee out-ttk.txt
           cat out-classic.txt out-ttk.txt | grep -q "Failed	0"
-        env:
-          ERROR_ON_FAILURES: 1
-      - name: Test-Drive Installation
-        run: make install
-      - name: Create Distribution Package
-        run: make dist
       - name: Convert Documentation to HTML
         # Needs a Tcl source checkout
         if: ${{ false }}
