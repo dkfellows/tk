@@ -3,7 +3,7 @@ on: [push]
 defaults:
   run:
     shell: bash
-    working-directory: tkunix
+    working-directory: tk/unix
 env:
   ERROR_ON_FAILURES: 1
 jobs:
