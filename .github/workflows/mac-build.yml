@@ -78,15 +78,12 @@ jobs:
         run: |
           touch tkStubInit.c
           mkdir "$HOME/install dir"
-          echo "USE_XQUARTZ=$SET_DISPLAY" >> $GITHUB_ENV
-          if [ $SET_DISPLAY == true ]; then
-            echo "DISPLAY=:0" >> $GITHUB_ENV
-          fi
+          echo "USE_XVFB=$SET_DISPLAY" >> $GITHUB_ENV
         working-directory: tk/generic
         env:
           SET_DISPLAY: ${{ contains(matrix.options, '--disable-aqua') }}
       - name: Adding binary dependencies
-        if: ${{ env.USE_XQUARTZ }}
+        if: ${{ env.USE_XVFB }}
         run: |
           brew cask install xquartz
         working-directory: .
@@ -127,19 +124,30 @@ jobs:
           }
       - name: Run Tests
         run: |
-          if [ $USE_XQUARTZ == true ]; then
-            PATH=$PATH:/opt/X11/bin
-            Xquartz &
-            XQUARTZ_PID=$!
-            echo Launched Xquartz as process $XQUARTZ_PID
-            trap "kill $XQUARTZ_PID" 0
-            sleep 2
+          if [ $USE_XVFB == true ]; then
+            function runXvfb {
+              PATH=$PATH:/opt/X11/bin
+              Xvfb $0 &
+              XVFB_PID=$!
+              echo Launched Xvfb as process $XVFB_PID >&2
+              trap "echo killing process $XVFB_PID... >&2; kill $XVFB_PID" 0
+              export DISPLAY=$0
+              sleep 2
+            }
+          else
+            function runXvfb {
+              : do nothing
+            }
           fi
-          make test | tee out-tests.txt || {
+          ( runXvfb :0; make test-classic; exit $? ) | tee out-classic.txt || {
             echo "::error::Failure during Test"
             exit 1
           }
-          cat out-tests.txt | grep -q "Failed[[:space:]][[:space:]]*[1-9]" && {
+          ( runXvfb :0; make test-ttk; exit $? ) | tee out-ttk.txt || {
+            echo "::error::Failure during Test"
+            exit 1
+          }
+          cat out-classic.txt out-ttk.txt | grep -q "Failed[[:space:]][[:space:]]*[1-9]" && {
             echo "::error::Failure during Test"
             exit 1
           }
