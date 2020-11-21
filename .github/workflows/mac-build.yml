@@ -54,13 +54,11 @@ jobs:
     strategy:
       matrix:
         symbols:
-          - "no"
-          - "mem"
+          - 'no'
+          - 'mem'
         options:
-          - "--enable-aqua"
-          - "--disable-aqua"
-    # Mark the X11 build as non-critical
-    continue-on-error: ${{ contains(matrix.install_x11, '--disable-aqua') }}
+          - '--enable-aqua'
+          - '--disable-aqua'
     defaults:
       run:
         shell: bash
@@ -77,10 +75,10 @@ jobs:
           ref: core-8-branch
           path: tcl
       - name: Add dependencies
-        if: ${{ contains(matrix.install_x11, '--disable-aqua') }}
+        if: ${{ contains(matrix.options, '--disable-aqua') }}
         run: |
-          echo "::warning::X11 not yet installed"
-          exit 1
+          brew cask install xquartz
+        working-directory: .
       - name: Prepare
         run: |
           touch tkStubInit.c
