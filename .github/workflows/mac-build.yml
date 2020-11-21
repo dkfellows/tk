@@ -128,6 +128,7 @@ jobs:
       - name: Run Tests
         run: |
           if [ $USE_XQUARTZ == true ]; then
+            PATH=$PATH:/opt/X11/bin
             Xquartz &
             XQUARTZ_PID = $!
             echo Launched Xquartz as process $XQUARTZ_PID
