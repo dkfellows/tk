@@ -130,7 +130,7 @@ jobs:
           if [ $USE_XQUARTZ == true ]; then
             PATH=$PATH:/opt/X11/bin
             Xquartz &
-            XQUARTZ_PID = $!
+            XQUARTZ_PID=$!
             echo Launched Xquartz as process $XQUARTZ_PID
             trap "kill $XQUARTZ_PID" 0
             sleep 2
