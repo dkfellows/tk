@@ -79,7 +79,7 @@ jobs:
           touch tkStubInit.c
           mkdir "$HOME/install dir"
           echo "USE_XQUARTZ=$SET_DISPLAY" >> $GITHUB_ENV
-          if [ $SET_DISPLAY == 1 ]; then
+          if [ $SET_DISPLAY == true ]; then
             echo "DISPLAY=:0" >> $GITHUB_ENV
           fi
         working-directory: tk/generic
@@ -127,7 +127,7 @@ jobs:
           }
       - name: Run Tests
         run: |
-          if [ $USE_XQUARTZ == 1 ]; then
+          if [ $USE_XQUARTZ == true ]; then
             Xquartz &
             XQUARTZ_PID = $!
             echo Launched Xquartz as process $XQUARTZ_PID
