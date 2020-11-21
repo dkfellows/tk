@@ -18,6 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
+          repository: tcltk/tcl
+          ref: core-8-branch
           path: tcl
       - name: Make Install Location
         working-directory: .
