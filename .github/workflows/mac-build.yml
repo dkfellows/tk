@@ -74,16 +74,22 @@ jobs:
           repository: tcltk/tcl
           ref: core-8-branch
           path: tcl
-      - name: Add dependencies
-        if: ${{ contains(matrix.options, '--disable-aqua') }}
-        run: |
-          brew cask install xquartz
-        working-directory: .
       - name: Prepare
         run: |
           touch tkStubInit.c
           mkdir "$HOME/install dir"
+          echo "USE_XQUARTZ=$SET_DISPLAY" >> $GITHUB_ENV
+          if [ $SET_DISPLAY == 1 ]; then
+            echo "DISPLAY=:0" >> $GITHUB_ENV
+          fi
         working-directory: tk/generic
+        env:
+          SET_DISPLAY: ${{ contains(matrix.options, '--disable-aqua') }}
+      - name: Adding binary dependencies
+        if: ${{ env.USE_XQUARTZ }}
+        run: |
+          brew cask install xquartz
+        working-directory: .
       - name: Build Tcl
         # Note that macOS is always a 64 bit platform
         run: |
@@ -121,6 +127,13 @@ jobs:
           }
       - name: Run Tests
         run: |
+          if [ $USE_XQUARTZ == 1 ]; then
+            Xquartz &
+            XQUARTZ_PID = $!
+            echo Launched Xquartz as process $XQUARTZ_PID
+            trap "kill $XQUARTZ_PID" 0
+            sleep 2
+          fi
           make test | tee out-tests.txt || {
             echo "::error::Failure during Test"
             exit 1
