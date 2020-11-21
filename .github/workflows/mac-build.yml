@@ -127,11 +127,11 @@ jobs:
           if [ $USE_XVFB == true ]; then
             function runXvfb {
               PATH=$PATH:/opt/X11/bin
-              Xvfb $0 &
+              Xvfb $1 &
               XVFB_PID=$!
-              echo Launched Xvfb as process $XVFB_PID >&2
+              echo Launched Xvfb $1 as process $XVFB_PID >&2
               trap "echo killing process $XVFB_PID... >&2; kill $XVFB_PID" 0
-              export DISPLAY=$0
+              export DISPLAY=$1
               sleep 2
             }
           else
