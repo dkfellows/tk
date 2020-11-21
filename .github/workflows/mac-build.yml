@@ -58,14 +58,9 @@ jobs:
           - "mem"
         options:
           - "--enable-aqua"
-        install_x11:
-          - 0
-        include:
-          - symbols: "no"
-            options: "--disable-aqua"
-            install_x11: 1
+          - "--disable-aqua"
     # Mark the X11 build as non-critical
-    continue-on-error: ${{ matrix.install_x11 }}
+    continue-on-error: ${{ contains(matrix.install_x11, '--disable-aqua') }}
     defaults:
       run:
         shell: bash
@@ -82,7 +77,7 @@ jobs:
           ref: core-8-branch
           path: tcl
       - name: Add dependencies
-        if: ${{ matrix.install_x11 }}
+        if: ${{ contains(matrix.install_x11, '--disable-aqua') }}
         run: |
           echo "::warning::X11 not yet installed"
           exit 1
