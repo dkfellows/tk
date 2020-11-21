@@ -57,16 +57,37 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Install MSYS2, Make and Tcl
-        run: choco install -y msys2 make magicsplat-tcl-tk
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: tcltk/tcl
+          ref: core-8-5-branch
+          path: tcl
+      - name: Install MSYS2, Make
+        run: choco install -y msys2 make
       - name: Prepare
         run: |
           touch tkStubInit.c
           mkdir "${HOME}/install dir"
         working-directory: generic
-      - name: Configure (symbols=${{ matrix.symbols }})
+      - name: Configure and Build Tcl
         run: |
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || {
+            cat config.log
+            echo "::warning::Failure during Tcl Configure"
+            exit 1
+          }
+          make all install  || {
+            echo "::warning::Failure during Tcl Build"
+            exit 1
+          }
+          echo "TCL_CONFIG_PATH=`pwd`" >> $GITHUB_ENV
+        env:
+          CFGOPT: --enable-64bit --enable-symbols=${{ matrix.symbols }}
+        working-directory: tcl/win
+      - name: Configure (symbols=${{ matrix.symbols }})
+        run: |
+          ./configure ${CFGOPT} "--prefix=$HOME/install dir" "--with-tcl=$TCL_CONFIG_PATH" || {
             cat config.log
             echo "::error::Failure during Configure"
             exit 1
