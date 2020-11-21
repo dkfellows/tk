@@ -68,11 +68,12 @@ jobs:
       - name: Prepare
         run: |
           touch tkStubInit.c
-          mkdir "${HOME}/install dir"
+          mkdir "${HOME}/install_dir"
+          echo "INSTALL_DIR=${HOME}/install_dir" >> $GITHUB_ENV
         working-directory: generic
       - name: Configure and Build Tcl
         run: |
-          ./configure ${CFGOPT} "--prefix=$HOME/install dir" || {
+          ./configure ${CFGOPT} "--prefix=$INSTALL_DIR" || {
             cat config.log
             echo "::warning::Failure during Tcl Configure"
             exit 1
@@ -87,7 +88,7 @@ jobs:
         working-directory: tcl/win
       - name: Configure (symbols=${{ matrix.symbols }})
         run: |
-          ./configure ${CFGOPT} "--prefix=$HOME/install dir" "--with-tcl=$TCL_CONFIG_PATH" || {
+          ./configure ${CFGOPT} "--prefix=$HOME/INSTALL_DIR" "--with-tcl=$TCL_CONFIG_PATH" || {
             cat config.log
             echo "::error::Failure during Configure"
             exit 1
