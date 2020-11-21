@@ -10,11 +10,11 @@ jobs:
         shell: bash
         working-directory: tk/macosx
     steps:
-      - name: Checkout
+      - name: Checkout Tk
         uses: actions/checkout@v2
         with:
           path: tk
-      - name: Checkout
+      - name: Checkout Tcl
         uses: actions/checkout@v2
         with:
           repository: tcltk/tcl
@@ -26,10 +26,22 @@ jobs:
           mkdir build
           echo "BUILD_DIR=`cd build && pwd`" >> $GITHUB_ENV
         working-directory: .
+      - name: Build Tcl
+        run: |
+          make all
+        working-directory: tcl/macosx
       - name: Build
-        run: make all
+        run: |
+          make all install || {
+            echo "::error::Failure during Build"
+            exit 1
+          }
       - name: Run Tests
-        run: make test styles=develop
+        run: |
+          make test styles=develop || {
+            echo "::error::Failure during Test"
+            exit 1
+          }
         env:
           MAC_CI: 1
   Unix-like:
@@ -44,11 +56,11 @@ jobs:
         shell: bash
         working-directory: tk/unix
     steps:
-      - name: Checkout
+      - name: Checkout Tk
         uses: actions/checkout@v2
         with:
           path: tk
-      - name: Checkout
+      - name: Checkout Tcl
         uses: actions/checkout@v2
         with:
           repository: tcltk/tcl
