@@ -10,17 +10,17 @@ jobs:
         shell: bash
         working-directory: tk/macosx
     steps:
-      - name: Checkout Tk
+      - name: Check out Tk
         uses: actions/checkout@v2
         with:
           path: tk
-      - name: Checkout Tcl
+      - name: Check out Tcl
         uses: actions/checkout@v2
         with:
           repository: tcltk/tcl
           ref: core-8-branch
           path: tcl
-      - name: Prepare
+      - name: Prepare checked out repositories
         run: |
           touch tk/generic/tkStubInit.c
           mkdir build
@@ -64,17 +64,17 @@ jobs:
         shell: bash
         working-directory: tk/unix
     steps:
-      - name: Checkout Tk
+      - name: Check out Tk
         uses: actions/checkout@v2
         with:
           path: tk
-      - name: Checkout Tcl
+      - name: Check out Tcl
         uses: actions/checkout@v2
         with:
           repository: tcltk/tcl
           ref: core-8-branch
           path: tcl
-      - name: Prepare
+      - name: Prepare checked out repositories
         run: |
           touch tkStubInit.c
           mkdir "$HOME/install dir"
@@ -82,10 +82,12 @@ jobs:
         working-directory: tk/generic
         env:
           SET_DISPLAY: ${{ contains(matrix.options, '--disable-aqua') }}
-      - name: Adding binary dependencies
+      - name: Add X11 (if required)
         if: ${{ env.USE_XVFB }}
+        # This involves black magic
         run: |
           brew cask install xquartz
+          sudo /opt/X11/lib/X11/xinit/privileged_startx.d/10-tmpdirs || true
         working-directory: .
       - name: Build Tcl
         # Note that macOS is always a 64 bit platform
@@ -153,7 +155,7 @@ jobs:
           }
         env:
           MAC_CI: 1
-      - name: Trial Installation
+      - name: Carry out trial installation
         run: |
           make install || {
             cat config.log
