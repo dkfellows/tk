@@ -53,7 +53,7 @@ jobs:
           mkdir 1dist.vfs
           cd 1dist.vfs
           unzip ../lib/libtcl*.zip
-          (cd ../lib/tk[0-9]*; tar -cf -) | (cd tcl_library; tar -xf -)
+          (cd ../lib/tk[0-9]*; tar -cf - .) | (cd tcl_library; tar -xkf -)
           zip -r ../1dist.zip .
         working-directory: ${{ env.INST_DIR }}
       - name: Build Single-File Wish
