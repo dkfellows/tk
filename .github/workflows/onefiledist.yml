@@ -38,6 +38,7 @@ jobs:
       - name: Build & Install Tcl
         run: |
           make binaries libraries tclzipfile install
+          make shell SCRIPT="$VER_PATH $GITHUB_ENV"
         working-directory: tcl/unix
       - name: Configure Tk
         run: |
@@ -52,11 +53,23 @@ jobs:
           mkdir 1dist.vfs
           cd 1dist.vfs
           unzip ../lib/libtcl*.zip
-          cp -r ../lib/tk[0-9]* tk_library
+          (cd ../lib/tk[0-9]*; tar -cf -) | (cd tcl_library; tar -xf -)
           zip -r ../1dist.zip .
         working-directory: ${{ env.INST_DIR }}
-      - name: Describe Installation Zip Contents
-        if: ${{ always() }}
+      - name: Build Single-File Wish
         run: |
-          unzip -l 1dist.zip || true
+          build_name=wish${TCL_PATCHLEVEL}_unofficial
+          cat ../tk/unix/wish 1dist.zip >> ${build_name}
+          chmod +x ${build_name}
+          tar -cf ${build_name}.tar ${build_name}
         working-directory: ${{ env.INST_DIR }}
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: Wish ${{ env.TCL_PATCHLEVEL }} Linux single-file build (unofficial)
+          path: 1dist/*.tar
+      # - name: Describe Installation Zip Contents
+      #   if: ${{ always() }}
+      #   run: |
+      #     unzip -l 1dist.zip || true
+      #   working-directory: ${{ env.INST_DIR }}
