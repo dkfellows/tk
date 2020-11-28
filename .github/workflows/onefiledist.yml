@@ -195,6 +195,7 @@ jobs:
       - name: Build & Install Tcl
         run: |
           make binaries libraries tclzipfile install
+          echo "ZIP_BIN=`pwd`/minizip.exe" >> $GITHUB_ENV
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
           $INST_DIR/bin/tclsh* $VER_PATH $GITHUB_ENV
         working-directory: tcl/win
@@ -209,9 +210,10 @@ jobs:
         # TODO: need the Tk version separately for distro naming below
       - name: Pack Tk Library Files into Library Zip
         run: |
-          unzip ../lib/libtcl*.zip
-          cp -a ../lib/tk[0-9]* .
-          zip -r ../1dist.zip .
+          set -x
+          unzip $TCL_ZIP
+          cp -R ../lib/tk[0-9]* .
+          $ZIP_BIN -o -r ../1dist.zip *
         working-directory: ${{ env.INST_DIR }}/1dist.vfs
       - name: Package
         run: |
