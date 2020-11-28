@@ -46,7 +46,18 @@ jobs:
         run: |
           make binaries libraries install
         working-directory: tk/unix
+      - name: Pack Tk Library Files
+        run: |
+          mkdir 1dist.vfs
+          cd 1dist.vfs
+          unzip ../lib/libtcl*.zip
+          cp ../lib/tk* tk_library
+          cd ..
+          zip -r 1dist.zip 1dist.vfs
+        working-directory: ${{ env.INST_DIR }}
       - name: Describe Installation
-        run: find . -ls
+        run: |
+          find . -ls
+          unzip -l 1dist.zip
         working-directory: ${{ env.INST_DIR }}
         
