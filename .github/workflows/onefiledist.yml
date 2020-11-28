@@ -40,7 +40,7 @@ jobs:
         working-directory: tcl/unix
       - name: Configure Tk
         run: |
-          ./configure $CFGOPT --with-tcl=$INST_DIR --prefix=$INST_DIR
+          ./configure $CFGOPT --with-tcl=$INST_DIR/lib --prefix=$INST_DIR
         working-directory: tk/unix
       - name: Build Tk
         run: |
