@@ -53,15 +53,10 @@ jobs:
           cd 1dist.vfs
           unzip ../lib/libtcl*.zip
           cp -r ../lib/tk[0-9]* tk_library
-          cd ..
-          zip -r 1dist.zip 1dist.vfs
+          zip -r ../1dist.zip .
         working-directory: ${{ env.INST_DIR }}
-      - name: Describe Installation
+      - name: Describe Installation Zip Contents
         if: ${{ always() }}
         run: |
-          echo LIST DIRECTORY
-          find . -ls || true
-          echo LIST ZIP
           unzip -l 1dist.zip || true
         working-directory: ${{ env.INST_DIR }}
-        
