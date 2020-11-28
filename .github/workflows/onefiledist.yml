@@ -52,7 +52,7 @@ jobs:
           mkdir 1dist.vfs
           cd 1dist.vfs
           unzip ../lib/libtcl*.zip
-          cp ../lib/tk[0-9]* tk_library
+          cp -r ../lib/tk[0-9]* tk_library
           cd ..
           zip -r 1dist.zip 1dist.vfs
         working-directory: ${{ env.INST_DIR }}
