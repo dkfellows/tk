@@ -105,6 +105,7 @@ jobs:
           touch tk/generic/tkStubInit.c
           echo "INST_DIR=$(cd install;pwd)" >> $GITHUB_ENV
           echo "VER_PATH=$(cd tcl/tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
+          echo "CREATE_DMG=$(cd create-dmg;pwd)/create-dmg" >> $GITHUB_ENV
         working-directory: "."
       - name: Configure Tcl
         run: |
