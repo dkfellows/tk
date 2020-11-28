@@ -56,8 +56,11 @@ jobs:
           zip -r 1dist.zip 1dist.vfs
         working-directory: ${{ env.INST_DIR }}
       - name: Describe Installation
+        if: ${{ always() }}
         run: |
-          find . -ls
-          unzip -l 1dist.zip
+          echo LIST DIRECTORY
+          find . -ls || true
+          echo LIST ZIP
+          unzip -l 1dist.zip || true
         working-directory: ${{ env.INST_DIR }}
         
