@@ -43,7 +43,7 @@ jobs:
         run: |
           ./configure $CFGOPT --with-tcl=$INST_DIR/lib --prefix=$INST_DIR
         working-directory: tk/unix
-      - name: Build Tk
+      - name: Build & Install Tk
         run: |
           make binaries libraries install
         working-directory: tk/unix
@@ -121,7 +121,7 @@ jobs:
           ./configure $CFGOPT --with-tcl=$INST_DIR/lib --prefix=$INST_DIR \
               --enable-aqua
         working-directory: tk/unix
-      - name: Build Tk
+      - name: Build & Install Tk
         run: |
           make binaries libraries install
         working-directory: tk/unix
@@ -160,3 +160,67 @@ jobs:
         with:
           name: Wish ${{ env.TCL_PATCHLEVEL }} macOS single-file build (unofficial)
           path: ${{ env.INST_DIR }}/*.dmg
+  win:
+    name: Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      CC: gcc
+      CFGOPT: --disable-symbols --disable-shared
+    steps:
+      - name: Checkout Tk
+        uses: actions/checkout@v2
+        with:
+          path: tk
+      - name: Checkout Tcl 8.7
+        uses: actions/checkout@v2
+        with:
+          repository: tcltk/tcl
+          ref: core-8-branch
+          path: tcl
+      - name: Setup Environment
+        run: |
+          mkdir -p install/1dist.vfs install/combined
+          touch tcl/generic/tclStubInit.c tcl/generic/tclOOStubInit.c
+          touch tk/generic/tkStubInit.c
+          echo "INST_DIR=$(cd install;pwd)" >> $GITHUB_ENV
+          echo "VER_PATH=$(cd tcl/tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
+        working-directory: "."
+      - name: Configure Tcl
+        run: |
+          ./configure $CFGOPT --enable-zipfs --prefix=$INST_DIR
+        working-directory: tcl/win
+      - name: Build & Install Tcl
+        run: |
+          make binaries libraries tclzipfile install
+          echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+          $INST_DIR/bin/tclsh* $VER_PATH $GITHUB_ENV
+        working-directory: tcl/win
+      - name: Configure Tk
+        run: |
+          ./configure $CFGOPT --with-tcl=$INST_DIR/lib --prefix=$INST_DIR
+        working-directory: tk/win
+      - name: Build & Install Tk
+        run: |
+          make all install
+        working-directory: tk/win
+        # TODO: need the Tk version separately for distro naming below
+      - name: Pack Tk Library Files into Library Zip
+        run: |
+          unzip ../lib/libtcl*.zip
+          cp -a ../lib/tk[0-9]* .
+          zip -r ../1dist.zip .
+        working-directory: ${{ env.INST_DIR }}/1dist.vfs
+      - name: Package
+        run: |
+          cat bin/wish*.exe 1dist.zip > combined/${BUILD_NAME}.exe
+        working-directory: ${{ env.INST_DIR }}
+        env:
+          BUILD_NAME: wish${{ env.TCL_PATCHLEVEL }}_unofficial
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: Wish ${{ env.TCL_PATCHLEVEL }} Windows single-file build (unofficial)
+          path: ${{ env.INST_DIR }}/combined/*.exe
