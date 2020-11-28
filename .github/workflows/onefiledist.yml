@@ -1,0 +1,52 @@
+name: Build Binaries
+on: [push]
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-16.04
+    defaults:
+      run:
+        shell: bash
+    env:
+      CC: gcc
+      CFGOPT: --disable-symbols --disable-shared
+    steps:
+      - name: Checkout Tk
+        uses: actions/checkout@v2
+        with:
+          path: tk
+      - name: Checkout Tcl 8.7
+        uses: actions/checkout@v2
+        with:
+          repository: tcltk/tcl
+          ref: core-8-branch
+          path: tcl
+      - name: Setup Environment
+        run: |
+          sudo apt-get install libxss-dev
+          mkdir install
+          touch tcl/generic/tclStubInit.c tcl/generic/tclOOStubInit.c
+          touch tk/generic/tkStubInit.c
+          echo "INST_DIR=$(cd install;pwd)" >> $GITHUB_ENV
+          echo "TOOL_DIR=$(cd tcl/tools;pwd)" >> $GITHUB_ENV
+        working-directory: "."
+      - name: Configure Tcl
+        run: |
+          ./configure $CFGOPT --enable-zipfs --prefix=$INST_DIR
+        working-directory: tcl/unix
+      - name: Build & Install Tcl
+        run: |
+          make binaries libraries tclzipfile install
+        working-directory: tcl/unix
+      - name: Configure Tk
+        run: |
+          ./configure $CFGOPT --with-tcl=$INST_DIR --prefix=$INST_DIR
+        working-directory: tk/unix
+      - name: Build Tk
+        run: |
+          make binaries libraries install
+        working-directory: tk/unix
+      - name: Describe Installation
+        run: find . -ls
+        working-directory: ${{ env.INST_DIR }}
+        
