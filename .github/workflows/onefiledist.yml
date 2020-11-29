@@ -219,17 +219,11 @@ jobs:
       - name: Package
         run: |
           cat ${TK_BIN} 1dist.zip > combined/${BUILD_NAME}.exe
-          echo "TARGET_EXE=`cd combined;pwd`/${BUILD_NAME}.exe" >> $GITHUB_ENV
         working-directory: install
         env:
           BUILD_NAME: wish${{ env.TCL_PATCHLEVEL }}_unofficial
-      - name: Check
-        run: |
-          echo Built $TARGET_EXE ?
-          ls -l
-        working-directory: install/combined
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
           name: Wish ${{ env.TCL_PATCHLEVEL }} Windows single-file build (unofficial)
-          path: ${{ env.TARGET_EXE }}
+          path: install/combined/wish${{ env.TCL_PATCHLEVEL }}_unofficial.exe
