@@ -182,7 +182,7 @@ jobs:
           path: tcl
       - name: Setup Environment
         run: |
-          mkdir -p install/1dist.vfs install/combined
+          mkdir -p install/1dist install/combined
           touch tcl/generic/tclStubInit.c tcl/generic/tclOOStubInit.c
           touch tk/generic/tkStubInit.c
           echo "INST_DIR=$(cd install;pwd)" >> $GITHUB_ENV
@@ -210,17 +210,14 @@ jobs:
         # TODO: need the Tk version separately for distro naming below
       - name: Pack Tk Library Files into Library Zip
         run: |
-          echo UNZIP ARCHIVE
           unzip $TCL_ZIP
-          echo COPY IN
           cp -R ../lib/tk[0-9]* .
-          echo REZIP ARCHIVE
           $ZIP_BIN -o -r ../1dist.zip *
-        working-directory: ${{ env.INST_DIR }}/1dist.vfs
+        working-directory: install/1dist
       - name: Package
         run: |
           cat bin/wish*.exe 1dist.zip > combined/${BUILD_NAME}.exe
-        working-directory: ${{ env.INST_DIR }}
+        working-directory: install
         env:
           BUILD_NAME: wish${{ env.TCL_PATCHLEVEL }}_unofficial
       - name: Upload
