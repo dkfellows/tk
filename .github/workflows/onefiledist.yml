@@ -210,9 +210,11 @@ jobs:
         # TODO: need the Tk version separately for distro naming below
       - name: Pack Tk Library Files into Library Zip
         run: |
-          set -x
+          echo UNZIP ARCHIVE
           unzip $TCL_ZIP
+          echo COPY IN
           cp -R ../lib/tk[0-9]* .
+          echo REZIP ARCHIVE
           $ZIP_BIN -o -r ../1dist.zip *
         working-directory: ${{ env.INST_DIR }}/1dist.vfs
       - name: Package
